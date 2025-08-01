@@ -133,7 +133,8 @@ def get_macos_config(browser: BrowserType) -> dict:
         isAppStore = True
         cookie_file = (
             "~/Library/Containers/com.tinyspeck.slackmacgap/Data"
-            / app_support / cookies_suffix
+            / app_support
+            / cookies_suffix
         )
 
     browser_name = browser.title()
@@ -146,14 +147,24 @@ def get_macos_config(browser: BrowserType) -> dict:
     else:
         keyring_username = f"{browser_name}"
 
-    key_material = keyring.get_password(keyring_service_name, keyring_username)
-    if key_material is None:
-        errmsg = (
-            "Could not find a password for the pair "
-            f"({keyring_service_name}, {keyring_username}). Please manually "
-            "verify they exist in `Keychain Access.app`."
-        )
-        raise ValueError(errmsg)
+    options = [
+        f"{browser_name} App Store Key",
+        f"{browser_name} Key",
+        f"{browser_name}",
+    ]
+    for option in options:
+        try:
+            key_material = keyring.get_password(keyring_service_name, option)
+            if key_material is None:
+                errmsg = (
+                    "Could not find a password for the pair "
+                    f"({keyring_service_name}, {option}). Please manually "
+                    "verify they exist in `Keychain Access.app`."
+                )
+                raise ValueError(errmsg)
+        except Exception as e:
+            pass
+    assert key_material is not None, "Failed to find key material"
 
     config = {
         "key_material": key_material,
@@ -288,11 +299,13 @@ def chrome_cookies(
     else:
         raise OSError("This script only works on MacOS or Linux.")
 
-    config.update({
-        "init_vector": b" " * 16,
-        "length": 16,
-        "salt": b"saltysalt",
-    })
+    config.update(
+        {
+            "init_vector": b" " * 16,
+            "length": 16,
+            "salt": b"saltysalt",
+        }
+    )
 
     if cookie_file is None:
         cookie_file = config["cookie_file"]
