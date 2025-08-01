@@ -162,9 +162,11 @@ def get_macos_config(browser: BrowserType) -> dict:
                     "verify they exist in `Keychain Access.app`."
                 )
                 raise ValueError(errmsg)
+            else:
+                break
         except Exception as e:
             pass
-    assert key_material is not None, "Failed to find key material"
+    assert key_material is None, "Failed to find key material"
 
     config = {
         "key_material": key_material,
